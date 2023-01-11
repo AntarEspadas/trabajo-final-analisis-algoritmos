@@ -213,7 +213,7 @@ def busca_tiempo_indefinido(tam_poblacion: float, prob_cruza: float, prob_mutaci
     mejor_individuo = max(poblacion, key=Individuo.aptitud)
     try:
         while True:
-            if iteracion % 100 == 0:
+            if iteracion % 1000 == 0:
                 total = sum(i.aptitud()
                             for i in poblacion)
                 promedio = total / len(poblacion)

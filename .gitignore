@@ -1,1 +1,10 @@
 *.pdf
+
+build/
+.idea/
+.vscode/
+_minted-*/
+
+# Added by cargo
+
+/target

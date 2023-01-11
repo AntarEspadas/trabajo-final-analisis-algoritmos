@@ -1,0 +1,9 @@
+#tam_pop = 50
+#probabilidad_mutacion = 0.01
+#probabilidad_cruza = 0.1
+#funcion_cruza = cruza_un_punto
+#iteraciones = 500
+
+#variable aptitud_promedio_población aptitud_promedio_mejor_individuo promedio_iteraciones promedio_duración
+0 29.845848973041043 49.621289477610254 8382 18.619808690528
+1 48.35117146220233 49.997386169670165 85 10.385090713332

@@ -1,0 +1,9 @@
+#tam_pop = 50
+#probabilidad_mutacion = 0.01
+#probabilidad_cruza = 0.1
+#funcion_seleccion = seleccion_por_torneo
+#iteraciones = 1500
+
+#variable aptitud_promedio_población aptitud_promedio_mejor_individuo promedio_iteraciones promedio_duración
+0 48.314274298921035 49.99750591373327 83 10.161630188461334
+1 48.293057565301524 49.997512965427404 83 10.171577483950667

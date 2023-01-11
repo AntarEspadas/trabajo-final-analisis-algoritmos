@@ -1,0 +1,271 @@
+% arara: pdflatex
+% arara: clean : {extensions:[aux,bbl,bcf,blg,glg,glo,gls,idx,ilg,ind,ist,lof,lol,lot,nlo,nls,out,ptc,toc,run.xml]}
+\documentclass[12pt]{article} % use the article class
+
+\input{preamble/packages.tex} % imports the packages.tex file from the preamble directory
+\input{preamble/macros.tex} % imports the macros.tex file from the preamble directory
+\input{preamble/settings.tex} % imports the settings.tex file from the preamble directory
+\input{preamble/titlepage.tex} % imports the titlepage.tex file from the preamble directory
+
+\begin{document}
+
+\setlength{\headheight}{15pt}
+\addtolength{\topmargin}{-2.5pt}
+
+\maketitle
+
+\pagebreak
+
+\section{Planteamiento del problema}
+
+Se busca minimizar la siguiente función empleando algoritmos genéticos:
+
+\begin{gather*}
+    f(x_1, x_2) = -20\text{exp}\left(-0.2\sqrt{\left(\frac{1}{2}\mathlarger{\sum}\limits_{i=1}^{2}x^2_i\right)}\right) - \text{exp}\left(\frac{1}{2}\mathlarger{\sum}\limits_{i=1}^{2}\cos(2\pi x_i)\right) + 20 + \text{exp}(1)\\
+    -32.768 \leq x_i \leq 32.768, i = 1, 2
+\end{gather*}
+
+Al graficar la función, se ve de la siguiente manera:
+
+\FloatBarrier
+
+\begin{figure}[hb]
+    \center
+    \includegraphics[width=\textwidth]{funcion_3D.png}
+\end{figure}
+
+\FloatBarrier
+
+Por lo que, por simple inspección, se esperaría que el mínimo fuera aproximadamente (0, 0).
+
+\section{Implementación del algoritmo}
+
+Antes de implementar el algoritmo genético, se deben definir los siguientes puntos:
+
+\begin{enumerate}
+    \item \textbf{Función de aptitud}
+
+          Puesto que se busca minimizar el valor de la función, no se puede emplear
+          la función directamente, sino que se debe multiplicar por $-1$. Sin embargo,
+          usar $-f(x_1, x_2)$ produciría números negativos, lo que causaría problemas
+          para la selección por ruleta, así que la función $-f(x_1, x_2) + 50$ resulta
+          una función de evaluación adecuada.
+
+    \item \textbf{Representación de las soluciones}
+
+          Se tienen que representar números en el rango $[-32.768, 32.768]$, para
+          lo cual se pueden emplear números en el rango $[-32768, 32768]$ y dividirlos
+          entre $1000$. Más aún, como 32768 es exactamente $2^{15}$, cada variable se
+          puede representar como un arreglo de 16 bits, y toda la solución como un
+          arreglo de 32 bits.
+
+    \item \textbf{Población inicial}
+
+          Como se decidió representar cada solución como un arreglo de 32 bits, resulta
+          sencillo crear una población inicial con un número $x$ de individuos aleatorios,
+          donde los bits de cada individuo tengan un $50\percentsign$ de probabilidad de
+          ser $1$ o $0$.
+
+    \item \textbf{Criterio de paro}
+
+          El criterio de paro que resultó conveniente para este proyecto fue el de
+          detener la ejecución tras transcurrir $10,000$ iteraciones sin encontrar
+          una mejor solución.
+\end{enumerate}
+
+Para la implementación del algoritmo, se decidió usar el lenguaje de programación
+Rust. El cual resulta conveniente para esta tarea por diversas razonas,
+la principal es que, como se trata de un lenguaje compilado de bajo nivel,
+permite generar código eficiente, lo que resulta conveniente puesto que cada
+ejecución requerirá de miles de iteraciones del algoritmo.
+
+El código se puede encontrar al final de este documento.
+
+\section{Análisis}
+
+A continuación se presenta un análisis de los efectos que tienen diversas variables
+en los resultados del algoritmo. Específicamente, se realizaron cientos de ejecuciones
+variando uno por uno los valores de tamaño de la población, probabilidad de cruza, probabilidad
+de mutación, función de cruza y función de selección, mientras que el resto de los
+valores se fijaron como constantes.
+
+\pagebreak
+
+\figuras{variacion_tam_pop}{Resultados promedio al variar el tamaño de la población}
+
+La figura \ref{fig:variacion_tam_pop} muestra los resultados de variar el tamaño
+de la población entre 50 y 200. Las probabilidades de cruza y mutación se fijaron
+en 0.25 y 0.01 respectivamente. Se empleó cruza en un punto y selección por torneo.
+Cada punto en la gráfica representa el promedio de 100 ejecuciones del algoritmo
+con los valores correspondientes.
+
+La figura \ref{fig:variacion_tam_pop_1} muestra el promedio de la aptitud de la
+población que se obtuvo al final de la ejecución (Después de $10,000$ iteraciones
+sin mejora) y la figura \ref{fig:variacion_tam_pop_2} muestra el promedio de la
+aptitude del mejor individuo que se encontró durante la ejecución.
+
+Como se puede observar, el tamaño de la población no parece tener un efecto
+significativo en el resultado final del algoritmo.
+
+La figura \ref{fig:variacion_tam_pop_3} muestra el promedio de la cantidad de
+iteraciones que le llevó al algoritmo encontrar al mejor individuo. Esto quiere
+decir que, como el algoritmo se detiene después de $10,000$ iteraciones sin encontrar
+un mejor individuo, la cantidad de iteraciones que transcurren antes de encontrar
+a dicho individuo se calcula restando $10,000$ al número total de iteraciones
+transcurridas.
+
+Esto nos muestra que el algoritmo requirió de significativamente menos iteraciones
+para encontrar una buena solución cuando se contaban con poblaciones más grandes.
+Sin embargo, como se puede ver en la figura \ref{fig:variacion_tam_pop_4}, esta
+ganancia es contrarrestada por el hecho de que las iteraciones con poblaciones
+mayores consumen más tiempo.
+
+Por esta razón es que se escogió 50 como tamaño de la población para ejecuciones
+futuras, puesto que permite ahorrar tiempo de ejecución sin sacrificar la calidad
+de los resultados finales.
+
+A continuación se analizarán los efectos de variar la probabilidad de cruza.
+
+\figuras{variacion_probabilidad_cruza_1}{Resultados promedio al variar la probabilidad de cruza}
+
+\figuras{variacion_probabilidad_cruza_2}{Resultados promedio al variar la probabilidad de cruza (300 ejecuciones)}
+
+La figura \ref{fig:variacion_probabilidad_cruza_1} se obtuvo de forma semejante
+a la figura \ref{fig:variacion_tam_pop}, pero esta vez fijando la población en 50
+y variando la probabilidad de cruza entre 0.1 y 0.25.
+
+Al igual que en el caso anterior, variar la probabilidad de cruza entre estos valores
+no parece tener ningún efecto en los resultados finales (Figuras
+\ref{fig:variacion_probabilidad_cruza_1_1} y \ref{fig:variacion_probabilidad_cruza_1_2}).
+Sin embargo, a diferencia del caso anterior, no parece tener ningún efecto en
+la cantidad de iteraciones requeridas. Para confirmar esta hipótesis, se realizaron
+las ejecuciones que se ven en la figura \ref{fig:variacion_probabilidad_cruza_2},
+las cuales se llevaron acabo con los mismos parámetros que las de la figura
+\ref{fig:variacion_probabilidad_cruza_1}, pero promediando 300 ejecuciones con cada
+probabilidad de cruza, en lugar de 100.
+
+En efecto, los resultados de este nuevo conjunto de ejecuciones son muy semejantes
+a los anteriormente producidos.
+
+Curiosamente, se percibe una ligera mejora en tiempo de ejecución cuando se tiene
+menor probabilidad de cruza (figuras \ref{fig:variacion_probabilidad_cruza_2_4} y
+\ref{fig:variacion_probabilidad_cruza_1_4}), probablemente debido al tiempo que
+se ahorra al aplicar el algoritmo de cruza menos veces, puesto que en promedio
+se selecciona a menos individuos para ser cruzados. Por esta razón se decidió
+usar una probabilidad de cruza de 0.1 para ejecuciones futuras.
+
+Ahora veremos los resultados de variar la probabilidad de mutación.
+
+\figuras{variacion_probabilidad_mutacion}{Resultados promedio al variar la probabilidad de mutación}
+
+Los datos de la figura \ref{fig:variacion_probabilidad_mutacion} se obtuvieron
+de forma semejante a los de las figuras \ref{fig:variacion_probabilidad_cruza_1} y
+\ref{fig:variacion_probabilidad_cruza_2} pero ahora fijando la probabilidad de cruza
+en $0.1$ y variando la probabilidad de mutación entre $0.01$ y $0.05$. Se realizaron 100
+ejecuciones con cada probabilidad de mutación.
+
+Con un simple vistazo a la figura \ref{fig:variacion_probabilidad_mutacion_1}
+resulta claro que mientras mayor sea la probabilidad de mutación, menor será la aptitud
+promedio de la población final. Esto tiene sentido, puesto que al ser completamente
+aleatorias, las mutaciones evitan que la población se estabilice tanto en valores
+de aptitud muy altos como muy bajos.
+
+Sin embargo, como muestra la figura \ref{fig:variacion_probabilidad_mutacion_2},
+este decremento en aptitud promedio no necesariamente se traduce en peores soluciones
+finales. Se puede conjeturar que, para probabilidades de mutación entre $0.01$ y $0.04$,
+se sigue teniendo un balance aceptable entre exploración y explotación por lo que
+se siguen obteniendo soluciones razonablemente buenas, sin embargo, para valores
+mayores a $0.04$ se empieza a contar con demasiada exploración, teniendo como
+resultado el hallazgo de peores soluciones.
+
+Las figuras \ref{fig:variacion_probabilidad_mutacion_3} y
+\ref{fig:variacion_probabilidad_mutacion_4} muestran que la cantidad de iteraciones
+y el tiempo de ejecución aumentan exponencialmente a medida que aumenta la
+probabilidad de mutación, puesto que mientras más aumenta esta probabilidad, más
+se acerca el algoritmo a ser una simple búsqueda aleatoria por ensayo y error.
+
+La probabilidad de mutación que resulta más conveniente es entonces $0.01$;
+
+Lo siguiente será comparar las funciones de cruza y de selección.
+
+\figuras{variacion_funcion_seleccion}{Resultados promedio de selección por ruleta y por torneo}
+
+\figuras{variacion_funcion_cruza}{Resultados promedio de cruza por un punto y dos puntos}
+
+Las datos para las figuras \ref{fig:variacion_funcion_seleccion} y
+\ref{fig:variacion_funcion_cruza} fueron obtenidos con una población de tamaño 50
+y probabilidades de cruza y mutación de $0.1$ y $0.01$ respectivamente. Se
+promediaron $500$ ejecuciones para cada función de selección y $1500$ para cada
+función de cruza.
+
+Como es de esperar, la selección por ruleta produce resultados mucho peores que
+la selección por torneo en términos de aptitud de la población final (Figura
+\ref{fig:variacion_funcion_seleccion_1}), cantidad de iteraciones (Figura
+\ref{fig:variacion_funcion_seleccion_3}) y, como consecuencia, tiempo de ejecución
+(Figura \ref{fig:variacion_funcion_seleccion_4}). Incluso la aptitud promedio
+de la solución final es ligeramente peor con selección por ruleta (Figura
+\ref{fig:variacion_funcion_seleccion_2}).
+
+Por otra parte, no hay ninguna diferencia significativa entre el uso de cruza en
+un punto comparado con la cruza en dos puntos.
+
+\pagebreak
+
+\section{Resultado final}
+
+Habiendo realizado el análisis anterior, se puede entonces realizar múltiples
+ejecuciones del programa en búsqueda del mínimo de la función. Para ello se
+utilizará una población de 50 individuos, probabilidades de cruza y mutación de
+$0.1$ y $0.01$ respectivamente, selección por torneo y cruza en un punto.
+
+La siguiente tabla muestra los resultados de 20 ejecuciones del programa, ordenadas
+de mayor a menor según la aptitud del mejor individuo. Para cada ejecución se
+registró la aptitud promedio de la población final, la aptitud del mejor individuo,
+la cantidad de iteraciones que llevó encontrar dicho individuo, el tiempo que llevó
+la ejecución y el valor del mejor individuo.
+
+Como se puede ver, los mejores valores encontrados por el algoritmo fueron
+$x_1 = 0$ y $x_2 = 0$. Evaluando en la función, obtenemos que $f(0, 0) = 0$.
+
+\pgfplotstabletypeset[
+    columns/1/.style={column name={Aptitud población}},
+    columns/2/.style={column name={Aptitud mejor individuo}},
+    columns/3/.style={column name={Iteraciones}},
+    columns/4/.style={column name={Tiempo (S)}},
+    columns/5/.style={column name={Mejor individuo}},
+    columns={1,2,3,4,5},
+    header=false,
+    string type,
+    before row=\hline,
+    every last row/.style={after row=\hline},
+    column type/.add={|}{},
+    every last column/.style={column type/.add={}{|}},
+    text indicator="
+]{../datos_ejecuciones/20_ejecuciones.txt}%
+
+\pagebreak
+
+\section{Código}
+
+\inputminted[
+    linenos,
+    breaklines,
+    bgcolor=LightGray,
+    label=lib.rs,
+    labelposition=all,
+    frame=topline
+]
+{rust}{../src/lib.rs}
+
+
+\inputminted[
+    linenos,
+    breaklines,
+    bgcolor=LightGray,
+    label=main.rs,
+    labelposition=all,
+    frame=topline
+]
+{rust}{../src/main.rs}
+
+\end{document}
